@@ -136,12 +136,15 @@ object Silver {
       .withColumn("ingestion_date", F.current_timestamp().cast("date"))
 
 
-    spark.sql("CREATE NAMESPACE IF NOT EXISTS lakehouse.silver LOCATION 's3a://mushroom/silver/'")
+    spark.sql("CREATE NAMESPACE IF NOT EXISTS lakehouse.silver")
 
     dfWithIngestionDate.write
       .format("iceberg")
       .mode("overwrite")
       .partitionBy("ingestion_date")
       .saveAsTable("lakehouse.silver.mushrooms")
+
+    val dfDB = spark.sql("SELECT * FROM lakehouse.silver.mushrooms limit 100")
+    dfDB.show()
   }
 }

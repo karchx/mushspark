@@ -24,7 +24,7 @@ object Bronze {
       .format("parquet")
       .mode("overwrite")
       .partitionBy("ingestion_date")
-      .save("s3a://mushroom/bronze/")
+      .save("s3a://mushroom/datacatalog/bronze/")
   }
 }
 
