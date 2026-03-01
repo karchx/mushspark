@@ -1,0 +1,5 @@
+datapipeline/target
+datapipeline/**/target
+spark-logs/
+source/
+datapipeline/.metals/

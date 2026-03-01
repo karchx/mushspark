@@ -1,0 +1,70 @@
+volumes:
+  spark-logs:
+  database-data:
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mushroom
+    volumes:
+      - database-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      RUSTFS_CONSOLE_ENABLE: true
+      RUSTFS_ACCESS_KEY: admin
+      RUSTFS_SECRET_KEY: password
+
+  spark-master:
+    container_name: spark-master
+    build: .
+    image: spark-image
+    entrypoint: ['./entrypoint.sh', 'master']
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - ./spark-logs:/opt/spark/spark-events
+      - ./datapipeline:/opt/spark/datapipeline
+    env_file:
+      - .env.spark
+    ports:
+      - '8080:8080' # Spark master Web UI
+      - '7077:7077' # For spark-node-to-spark-node queries
+      - '4040:4040' # Spark worker data
+
+  spark-history-server:
+    container_name: spark-history
+    image: spark-image
+    entrypoint: ['./entrypoint.sh', 'history']
+    depends_on:
+      - spark-master
+    env_file:
+      - .env.spark
+    volumes:
+      - ./spark-logs:/opt/spark/spark-events
+    ports:
+      - '18080:18080'
+
+  spark-worker:
+    container_name: spark-worker
+    image: spark-image
+    entrypoint: ['./entrypoint.sh', 'worker']
+    depends_on:
+      - spark-master
+    env_file:
+      - .env.spark
+    volumes:
+      - ./spark-logs:/opt/spark/spark-events
+
