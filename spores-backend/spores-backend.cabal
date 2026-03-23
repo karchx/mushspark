@@ -26,11 +26,16 @@ source-repository head
 library
   exposed-modules:
       API
-      API.Routes
-      API.Users.Types
+      Auth
       DB
-      Handlers
+      FSM.Recommendation
+      Recommendations.DB
+      Recommendations.Handler
+      Recommendations.Types
       Types
+      Users.DB
+      Users.Handlers
+      Users.Types
   other-modules:
       Paths_spores_backend
   autogen-modules:
@@ -43,13 +48,19 @@ library
     , base >=4.7 && <5
     , beam-core
     , beam-postgres
+    , bytestring
+    , containers
     , exceptions
+    , http-types
+    , jwt
     , mtl
     , postgresql-simple
     , resource-pool
     , servant-server
     , text
+    , time
     , uuid
+    , vault
     , wai
     , warp
   default-language: Haskell2010
@@ -68,14 +79,20 @@ executable spores-backend-exe
     , base
     , beam-core
     , beam-postgres
+    , bytestring
+    , containers
     , exceptions
+    , http-types
+    , jwt
     , mtl
     , postgresql-simple
     , resource-pool
     , servant-server
     , spores-backend
     , text
+    , time
     , uuid
+    , vault
     , wai
     , warp
   default-language: Haskell2010
@@ -95,17 +112,23 @@ test-suite spores-backend-test
     , base
     , beam-core
     , beam-postgres
+    , bytestring
+    , containers
     , exceptions
     , hspec
     , hspec-wai
     , hspec-wai-json
+    , http-types
+    , jwt
     , mtl
     , postgresql-simple
     , resource-pool
     , servant-server
     , spores-backend
     , text
+    , time
     , uuid
+    , vault
     , wai
     , warp
   default-language: Haskell2010

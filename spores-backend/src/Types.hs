@@ -1,6 +1,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
-module Types where
+module Types (
+    AppM
+) where
 
 import Control.Monad.Reader (ReaderT)
 import Servant (Handler)

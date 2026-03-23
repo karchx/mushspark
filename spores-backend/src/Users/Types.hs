@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-module API.Users.Types (CreateUserRequest(..)) where
+module Users.Types (CreateUserRequest(..)) where
 
 import GHC.Generics (Generic)
 import Data.Aeson (ToJSON, FromJSON)

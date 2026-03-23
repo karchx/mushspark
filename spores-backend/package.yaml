@@ -33,6 +33,12 @@ dependencies:
 - uuid
 - mtl
 - exceptions
+- time
+- bytestring
+- jwt
+- vault
+- containers
+- http-types
 
 ghc-options:
 - -Wall
