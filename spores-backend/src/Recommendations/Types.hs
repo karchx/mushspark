@@ -32,6 +32,7 @@ data RecommendationResponse = RecommendationResponse
 
 
 data ApplyEvent = ApplyEvent
-    { event :: Text 
+    { recommendationId  :: UUID
+    , event :: Text 
     } deriving (Generic, FromJSON)
 

@@ -31,7 +31,6 @@ type RecommendationApi =
         :> "v1"
         :> "recommendations"
         :> "apply"
-        :> Capture "id" UUID
         :> ReqBody '[JSON] ApplyEvent
         :> Post '[JSON] RecommendationResponse)
 

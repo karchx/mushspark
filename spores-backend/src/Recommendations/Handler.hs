@@ -64,10 +64,10 @@ createRecommendation authUser req = do
 
 
 applyEvent
-    :: UUID
+    :: AuthenticatedUser
     -> ApplyEvent
     -> AppM RecommendationResponse
-applyEvent recId (ApplyEvent rawEvent) = do
+applyEvent authUser (ApplyEvent recId rawEvent) = do
     -- Fetch the current recommendation from the database
     mRec <- runDb $ runSelectReturningOne $ select $ do
         rec <- all_ (_recommendations appDb)
@@ -96,15 +96,18 @@ applyEvent recId (ApplyEvent rawEvent) = do
 
     updatedRecs <- try $ runDb $ runUpdateReturningList $
         update (_recommendations appDb)
-            (\r -> _status r <-. val_ (statusToText newStatus))
+            (\r -> 
+                (_status r <-. val_ (statusToText newStatus))
+                <> (_toUserId r <-. just_ (val_ (auUserId authUser)))
+            )
             (\r -> _recommendationId r ==. val_ recId
                 &&. _status r ==. val_ (_status rec)
             )
 
     case updatedRecs of
         Left e@(SqlError { sqlState = state })
-            | state == "23505" ->
-                let jsonPayload = object ["message" .= ("Recommendation already exists" :: Text)]
+            | state == "23514" ->
+                let jsonPayload = object ["message" .= ("Self-recommendation is not allowed." :: Text)]
                 in throwError err409 { errBody = encode jsonPayload, errHeaders = [("Content-Type", "application/json")] }
             | otherwise         -> 
                 let jsonPayload = object ["message" .= ("Internal database error" :: Text), "error" .= show e]
