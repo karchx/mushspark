@@ -5,19 +5,22 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Recommendations.DB (
-    RecommendationT(..),
-    Recommendation,
-    RecommendationId,
-    AppDB(..),
-    appDb
-) where
+module Recommendations.DB 
+    ( RecommendationT(..)
+    , Recommendation
+    , RecommendationId
+    , EventRecommendationT(..)
+    , EventRecommendation
+    , EventRecommendationId
+    , AppDB(..)
+    , appDb
+    ) where
 
 import Database.Beam
 import Data.Text (Text)
-import Data.Aeson (ToJSON(..), FromJSON, genericToJSON, defaultOptions, Options(..))
+import Data.Aeson (ToJSON(..), FromJSON (parseJSON), genericToJSON, defaultOptions, Options(..))
 import Data.UUID (UUID)
--- import Data.Time (UTCTime)
+import Data.Time (UTCTime)
 
 data RecommendationT f = Recommendation
     { _recommendationId :: Columnar f UUID
@@ -50,8 +53,42 @@ instance Table RecommendationT where
     data PrimaryKey RecommendationT f = RecommendationId (Columnar f UUID) deriving (Generic, Beamable)
     primaryKey = RecommendationId . _recommendationId
 
+data EventRecommendationT f = EventRecommendation
+    { _erId :: Columnar f UUID
+    , _erRecommendationId :: PrimaryKey RecommendationT f -- foreign key
+    , _erStatus :: Columnar f Text
+    , _erCreatedAt :: Columnar f UTCTime
+    } deriving (Generic, Beamable)
+
+type EventRecommendation = EventRecommendationT Identity
+type EventRecommendationId = PrimaryKey EventRecommendationT Identity
+
+-- Instance JSON for PrimaryKey
+instance ToJSON RecommendationId where
+    toJSON (RecommendationId uid) = toJSON uid
+
+instance FromJSON RecommendationId where
+    parseJSON v = RecommendationId <$> parseJSON v
+
+instance Table EventRecommendationT where
+    data PrimaryKey EventRecommendationT f = EventRecommendationId (Columnar f UUID) deriving (Generic, Beamable)
+    primaryKey = EventRecommendationId . _erId
+
+instance FromJSON EventRecommendation
+instance ToJSON EventRecommendation where
+    toJSON = genericToJSON defaultOptions
+        { fieldLabelModifier = formatField }
+        where
+            formatField "_erId" = "id"
+            formatField "_erRecommendationId" = "recommendationId"
+            formatField "_erStatus" = "status"
+            formatField "_erCreatedAt" = "createdAt"
+            formatField other = other
+
+
 data AppDB f = AppDB
     { _recommendations :: f (TableEntity RecommendationT)
+    , _eventsRecommendation :: f (TableEntity EventRecommendationT)
     } deriving (Generic, Database be)
 
 appDb :: DatabaseSettings be AppDB
@@ -64,4 +101,11 @@ appDb = defaultDbSettings `withDbModification` dbModification
         , _status           = "status"
         , _note             = "note"
         }
+    , _eventsRecommendation = setEntityName "events_recommendation" <> modifyTableFields tableModification
+        { _erId = "id"
+        , _erRecommendationId = RecommendationId "recommendation_id"
+        , _erStatus = "status"
+        , _erCreatedAt = "created_at"
+        }
     }
+

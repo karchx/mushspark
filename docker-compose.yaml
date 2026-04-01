@@ -4,13 +4,13 @@ volumes:
 
 services:
   postgres:
-    image: postgres:16
+    image: postgres:18
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
       POSTGRES_DB: mushroom
     volumes:
-      - database-data:/var/lib/postgresql/data
+      - database-data:/var/lib/postgresql
     ports:
       - "5432:5432"
 
