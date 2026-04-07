@@ -14,12 +14,21 @@ import Database.Beam
 import Database.Beam.Postgres (SqlError(..))
 import Database.Beam.Backend.SQL.BeamExtensions (runInsertReturningList, MonadBeamUpdateReturning (runUpdateReturningList))
 import Servant (throwError, err409, err404, err500, errBody, errHeaders, err400)
-import Recommendations.Types (CreateRecommendationRequest(..), RecommendationResponse(..), ApplyEvent(..))
+import Recommendations.Types (CreateRecommendationRequest(..), RecommendationResponse(..), ApplyEvent(..), CreateEventRecommendationRequest(..), EventRecommendationResponse(..))
 import Types (AppM)
 import Auth (AuthenticatedUser(..))
 import Data.UUID (UUID)
 import Data.Text (Text)
-import Recommendations.DB (RecommendationT(..), Recommendation, appDb, _recommendations)
+import Recommendations.DB 
+    ( RecommendationT(..)
+    , EventRecommendationT (..)
+    , PrimaryKey(..)
+    , Recommendation
+    , appDb
+    , _recommendations
+    , AppDB (_eventsRecommendation)
+    , EventRecommendation
+    )
 import FSM.Recommendation(RecommendationStatus(..), ActiveStatus(..), TransitionError(..), statusToText, textToStatus, transition, textToEvent)
 import DB (runDb)
 
@@ -46,7 +55,13 @@ createRecommendation authUser req = do
                 let jsonPayload = object ["message" .= ("Internal database error" :: Text), "error" .= show e]
                 in throwError err500 { errBody = encode jsonPayload, errHeaders = [("Content-Type", "application/json")] }
 
-        Right (newRecommendation:_) -> return $ toResponse newRecommendation
+        Right (newRecommendation:_) -> do
+            let eventReq = CreateEventRecommendationRequest
+                    { recommendationId = _recommendationId newRecommendation
+                    , status = _status newRecommendation
+                    }
+            _ <- createEventRecommendation eventReq
+            return $ toResponse newRecommendation
         Right []                    -> throwError err500 { errBody = "Failed to create recommendation" }
 
     where
@@ -61,6 +76,38 @@ createRecommendation authUser req = do
                                     Nothing -> Active Pending
             , note              = _note dbRec
             }
+
+createEventRecommendation :: CreateEventRecommendationRequest -> AppM EventRecommendationResponse
+createEventRecommendation req = do
+    let insertQuery = insert (_eventsRecommendation appDb) $
+            insertExpressions
+                [ EventRecommendation
+                    default_
+                    (val_ (RecommendationKey req.recommendationId))
+                    (val_ (req.status))
+                ]
+    insertedEventRecs <- try $ runDb $ runInsertReturningList insertQuery
+
+    case insertedEventRecs of
+        Left e@(SqlError { sqlState = state })
+            | state == "23505" ->
+                let jsonPayload = object ["message" .= ("Recommendation already exists" :: Text)]
+                in throwError err409 { errBody = encode jsonPayload, errHeaders = [("Content-Type", "application/json")] }
+            | otherwise         -> 
+                let jsonPayload = object ["message" .= ("Internal database error" :: Text), "error" .= show e]
+                in throwError err500 { errBody = encode jsonPayload, errHeaders = [("Content-Type", "application/json")] }
+
+        Right (newRecommendation:_) -> return $ toResponse newRecommendation
+        Right []                    -> throwError err500 { errBody = "Failed to create recommendation" }
+    where
+        toResponse :: EventRecommendation -> EventRecommendationResponse
+        toResponse dbRec =
+            let (RecommendationKey uuid) = _erRecommendationId dbRec
+            in EventRecommendationResponse
+                { erId = _erId dbRec
+                , recommendationId = uuid
+                , status = _erStatus dbRec
+                }
 
 
 applyEvent
@@ -113,7 +160,13 @@ applyEvent authUser (ApplyEvent recId rawEvent) = do
                 let jsonPayload = object ["message" .= ("Internal database error" :: Text), "error" .= show e]
                 in throwError err500 { errBody = encode jsonPayload, errHeaders = [("Content-Type", "application/json")] }
 
-        Right (updatedRec:_) -> return $ toResponse updatedRec
+        Right (updatedRec:_) -> do
+            let eventReq = CreateEventRecommendationRequest
+                    { recommendationId = _recommendationId updatedRec
+                    , status = _status updatedRec
+                    }
+            _ <- createEventRecommendation eventReq
+            return $ toResponse updatedRec
         Right []             -> throwError err500 { errBody = "Failed to update recommendation" }
     where
         toResponse :: Recommendation -> RecommendationResponse

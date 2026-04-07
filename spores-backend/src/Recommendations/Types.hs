@@ -7,6 +7,8 @@ module Recommendations.Types
     ( CreateRecommendationRequest(..)
     , RecommendationResponse(..)
     , ApplyEvent(..)
+    , CreateEventRecommendationRequest(..)
+    , EventRecommendationResponse(..)
     ) where
 
 import Data.UUID (UUID)
@@ -35,4 +37,15 @@ data ApplyEvent = ApplyEvent
     { recommendationId  :: UUID
     , event :: Text 
     } deriving (Generic, FromJSON)
+
+data CreateEventRecommendationRequest = CreateEventRecommendationRequest
+    { recommendationId :: UUID
+    , status :: Text
+    } deriving (Generic, FromJSON)
+
+data EventRecommendationResponse = EventRecommendationResponse
+    { erId :: UUID
+    , recommendationId :: UUID
+    , status :: Text
+    } deriving (Generic, ToJSON)
 

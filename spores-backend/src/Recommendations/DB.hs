@@ -12,6 +12,7 @@ module Recommendations.DB
     , EventRecommendationT(..)
     , EventRecommendation
     , EventRecommendationId
+    , PrimaryKey(..)
     , AppDB(..)
     , appDb
     ) where
@@ -20,7 +21,6 @@ import Database.Beam
 import Data.Text (Text)
 import Data.Aeson (ToJSON(..), FromJSON (parseJSON), genericToJSON, defaultOptions, Options(..))
 import Data.UUID (UUID)
-import Data.Time (UTCTime)
 
 data RecommendationT f = Recommendation
     { _recommendationId :: Columnar f UUID
@@ -50,14 +50,13 @@ instance ToJSON Recommendation where
             formatField other = other
 
 instance Table RecommendationT where
-    data PrimaryKey RecommendationT f = RecommendationId (Columnar f UUID) deriving (Generic, Beamable)
-    primaryKey = RecommendationId . _recommendationId
+    data PrimaryKey RecommendationT f = RecommendationKey (Columnar f UUID) deriving (Generic, Beamable)
+    primaryKey = RecommendationKey . _recommendationId
 
 data EventRecommendationT f = EventRecommendation
     { _erId :: Columnar f UUID
     , _erRecommendationId :: PrimaryKey RecommendationT f -- foreign key
     , _erStatus :: Columnar f Text
-    , _erCreatedAt :: Columnar f UTCTime
     } deriving (Generic, Beamable)
 
 type EventRecommendation = EventRecommendationT Identity
@@ -65,10 +64,10 @@ type EventRecommendationId = PrimaryKey EventRecommendationT Identity
 
 -- Instance JSON for PrimaryKey
 instance ToJSON RecommendationId where
-    toJSON (RecommendationId uid) = toJSON uid
+    toJSON (RecommendationKey uid) = toJSON uid
 
 instance FromJSON RecommendationId where
-    parseJSON v = RecommendationId <$> parseJSON v
+    parseJSON v = RecommendationKey <$> parseJSON v
 
 instance Table EventRecommendationT where
     data PrimaryKey EventRecommendationT f = EventRecommendationId (Columnar f UUID) deriving (Generic, Beamable)
@@ -103,9 +102,8 @@ appDb = defaultDbSettings `withDbModification` dbModification
         }
     , _eventsRecommendation = setEntityName "events_recommendation" <> modifyTableFields tableModification
         { _erId = "id"
-        , _erRecommendationId = RecommendationId "recommendation_id"
+        , _erRecommendationId = RecommendationKey "recommendation_id"
         , _erStatus = "status"
-        , _erCreatedAt = "created_at"
         }
     }
 
