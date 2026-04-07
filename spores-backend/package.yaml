@@ -39,6 +39,7 @@ dependencies:
 - vault
 - containers
 - http-types
+- password
 
 ghc-options:
 - -Wall

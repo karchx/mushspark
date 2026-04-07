@@ -22,6 +22,7 @@ data UserT f = User
     { _userId :: Columnar f UUID
     , _userUserName :: Columnar f Text
     , _email :: Columnar f Text
+    , _password :: Columnar f Text
     } deriving (Generic, Beamable)
 
 type User = UserT Identity
