@@ -4,6 +4,7 @@ module Users.Handlers
     ( getUsers
     , createUser
     , deleteUser
+    , adminUserHandler
     ) where
 
 import Control.Monad.Catch (try)
@@ -15,14 +16,25 @@ import Database.Beam.Postgres (SqlError(..))
 import Database.Beam.Backend.SQL.BeamExtensions (runInsertReturningList)
 import Types (AppM)
 import Data.UUID (UUID)
+import Data.Maybe (fromMaybe)
 import Data.Password.Argon2 (mkPassword, hashPassword, PasswordHash (unPasswordHash))
-
 import Users.DB
 import Users.Types (CreateUserRequest(..))
 import DB (runDb)
 
-getUsers :: AppM [User]
-getUsers = runDb $ runSelectReturningList $ select $ all_ (_users appDb)
+adminUserHandler :: Maybe Integer -> Maybe Integer -> AppM [User]
+adminUserHandler mLimit mOffset = do
+    let limit = fromMaybe 10 mLimit
+        offset = fromMaybe 0 mOffset
+
+    getUsers limit offset
+
+getUsers :: Integer -> Integer -> AppM [User]
+getUsers limit offset = runDb $ runSelectReturningList $ select $ 
+    limit_ limit $
+    offset_ offset $
+    orderBy_ (\u -> asc_ (_userId u)) $
+    all_ (_users appDb)
 
 createUser :: CreateUserRequest -> AppM User
 createUser req = do

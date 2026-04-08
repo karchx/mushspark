@@ -17,18 +17,22 @@ import Data.Pool (Pool, newPool, defaultPoolConfig, setNumStripes)
 import Database.PostgreSQL.Simple (Connection, connectPostgreSQL, close)
 import Control.Monad.Reader (runReaderT)
 import API
-import Users.Handlers (
-    getUsers,
-    createUser,
-    deleteUser
+import Users.Handlers 
+    ( adminUserHandler
+    , createUser
+    , deleteUser
     )
 import Recommendations.Handler (createRecommendation, applyEvent)
 import Types (AppM)
 import Auth (authMiddleware, authContext, AuthenticatedUser)
+import Mushrooms.Handler (getMushroomPaginate)
 
 
 server :: ServerT MainAPI AppM
-server = (getUsers :<|> createUser :<|> deleteUser) :<|> (createRecommendation :<|> applyEvent)
+server = adminUserHandler 
+    :<|>  (createUser :<|> deleteUser) 
+    :<|> (createRecommendation :<|> applyEvent)
+    :<|> getMushroomPaginate
 
 nt :: Pool Connection -> AppM a -> Handler a
 nt pool x = runReaderT x pool

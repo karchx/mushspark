@@ -29,6 +29,9 @@ library
       Auth
       DB
       FSM.Recommendation
+      Mushrooms.DB
+      Mushrooms.Handler
+      Mushrooms.Types
       Recommendations.DB
       Recommendations.Handler
       Recommendations.Types

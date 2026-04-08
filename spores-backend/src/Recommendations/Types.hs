@@ -3,7 +3,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
-module Recommendations.Types 
+module Recommendations.Types
     ( CreateRecommendationRequest(..)
     , RecommendationResponse(..)
     , ApplyEvent(..)

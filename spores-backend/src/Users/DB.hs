@@ -6,7 +6,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Users.DB 
-    (UserT(..)
+    ( UserT(..)
     , User
     , UserId
     , AppDb(..)
@@ -15,7 +15,7 @@ module Users.DB
 
 import Database.Beam
 import Data.Text (Text)
-import Data.Aeson (ToJSON(..), FromJSON, genericToJSON, defaultOptions, Options(..))
+import Data.Aeson (ToJSON(..), FromJSON, (.=), object)
 import Data.UUID (UUID)
 
 data UserT f = User
@@ -29,14 +29,11 @@ type User = UserT Identity
 type UserId = PrimaryKey UserT Identity
 
 instance ToJSON User where
-    toJSON = genericToJSON defaultOptions
-        { fieldLabelModifier = formatField }
-        where
-            formatField "_userId" = "id"
-            formatField "_userUserName" = "name"
-            formatField "_email" = "email"
-            formatField other = other
-
+    toJSON user = object
+        [ "id" .= _userId user
+        , "username" .= _userUserName user
+        , "email" .= _email user
+        ]
 
 instance FromJSON User
 

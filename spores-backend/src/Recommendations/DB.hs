@@ -5,7 +5,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Recommendations.DB 
+module Recommendations.DB
     ( RecommendationT(..)
     , Recommendation
     , RecommendationId
