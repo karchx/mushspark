@@ -1,6 +1,8 @@
 volumes:
   spark-logs:
   database-data:
+  mushdbt_database-data:
+    external: true
 
 services:
   postgres:
@@ -10,7 +12,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: mushroom
     volumes:
-      - database-data:/var/lib/postgresql
+      - mushdbt_database-data:/var/lib/postgresql
     ports:
       - "5432:5432"
 

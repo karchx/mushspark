@@ -26,7 +26,7 @@ data MushroomT f = Mushroom
     , _capShape :: Columnar f Text
     , _capSurface :: Columnar f Text
     , _capColor :: Columnar f Text
-    , _season :: Columnar f Text
+    , _season :: Columnar f (Maybe Text)
     } deriving (Generic, Beamable)
 
 type Mushroom = MushroomT Identity
